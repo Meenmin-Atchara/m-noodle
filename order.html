@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>สั่งอาหาร</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="hdr"><h1 id="shop">สั่งอาหาร</h1><span id="tableName"></span></div>
+  <div class="wrap">
+    <div id="statusCard" class="status-card" hidden></div>
+    <p id="fatal" class="err center" hidden></p>
+    <div id="menu"></div>
+  </div>
+
+  <div class="cartbar" id="cartbar" hidden>
+    <button class="btn big" id="openCart"><span>🛒 ตะกร้า (<span id="cnt">0</span>)</span><span id="tot"></span></button>
+  </div>
+
+  <dialog class="sheet" id="cartDlg">
+    <div class="sheet-body">
+      <h3>รายการที่สั่ง</h3>
+      <div id="lines"></div>
+      <input class="note" id="orderNote" placeholder="หมายเหตุถึงร้าน (ถ้ามี)" maxlength="300">
+      <div class="row"><b class="grow">รวม</b><b id="sum"></b></div>
+      <p class="muted center">ชำระเงินตอนเรียกเก็บเงินที่โต๊ะ</p>
+      <p class="err" id="submitErr" hidden></p>
+      <div class="row">
+        <button class="btn ghost" id="closeCart">กลับไปเลือกเมนู</button>
+        <button class="btn grow" id="submit">ยืนยันสั่งอาหาร</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="common.js"></script>
+  <script src="order.js"></script>
+</body>
+</html>
