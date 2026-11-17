@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#261A14">
+  <title>ร้านก๋วยเตี๋ยว</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="hero">
+    <div class="hero-bowl" data-bowl></div>
+    <h1 id="shop">ร้านก๋วยเตี๋ยว</h1>
+    <p class="lead">สั่งอาหารจากมือถือได้ที่โต๊ะเลย</p>
+    <ol class="how">
+      <li><span><b>สแกน QR</b> ที่ติดอยู่บนโต๊ะ</span></li>
+      <li><span><b>เลือกเมนู</b> แล้วกดสั่ง</span></li>
+      <li><span><b>รอรับอาหาร</b> จ่ายเงินตอนเรียกเก็บ</span></li>
+    </ol>
+    <a class="staff-link" href="staff.html">สำหรับพนักงาน</a>
+  </main>
+  <script src="bowl.js"></script>
+  <script src="config.js"></script>
+  <script>
+    try { document.getElementById('shop').textContent = CONFIG.SHOP_NAME; document.title = CONFIG.SHOP_NAME; } catch (e) {}
+  </script>
+</body>
+</html>

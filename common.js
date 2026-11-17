@@ -5,8 +5,11 @@ const baht = n => '฿' + Number(n).toLocaleString('th-TH', { maximumFractionDig
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const optionsText = opts => (opts || []).map(o => o.choice).join(', ');
 const STATUS_TH = {
-  pending: 'รอพนักงานยืนยัน', cooking: 'กำลังทำ 🍜', ready: 'พร้อมเสิร์ฟแล้ว ✅',
-  served: 'เสิร์ฟแล้ว ขอบคุณครับ', cancelled: 'ออเดอร์ถูกยกเลิก'
+  pending: 'ส่งออเดอร์แล้ว รอร้านยืนยันสักครู่',
+  cooking: 'ร้านกำลังทำให้ครับ',
+  ready: 'อาหารพร้อมแล้ว พนักงานกำลังนำไปเสิร์ฟ',
+  served: 'เสิร์ฟแล้ว ทานให้อร่อยนะครับ',
+  cancelled: 'ร้านรับออเดอร์นี้ไม่ได้ กรุณาเรียกพนักงาน'
 };
 
 function toast(msg, ms = 2500) {
@@ -21,6 +24,17 @@ async function loadMenu() {
   if (error) throw error;
   return data;
 }
+
+// ---------- ไอคอนตามหมวด (ใช้เมื่อยังไม่มีรูปอาหาร) ----------
+const CAT_ICON = [
+  [/ก๋วยเตี๋ยว|เส้น|บะหมี่|เกาเหลา/, '🍜'],
+  [/ทานเล่น|ทอด|ของว่าง/, '🍢'],
+  [/เครื่องดื่ม|น้ำ|ชา|กาแฟ/, '🧋'],
+  [/ข้าว/, '🍚'],
+  [/หวาน|ไอศกรีม|ไอติม/, '🍧']
+];
+const catIcon = c => (CAT_ICON.find(([re]) => re.test(c)) || [null, '🍽️'])[1];
+const thumbInner = m => m.image_url ? `<img src="${esc(m.image_url)}" alt="" loading="lazy">` : catIcon(m.category);
 
 // ---------- ตะกร้า ----------
 class Cart {
@@ -52,11 +66,11 @@ function renderCartLines(cart, el) {
         <div class="grow"><b>${esc(l.name)}</b>
           <div class="muted">${esc(optionsText(l.options))}${l.note ? ' · ' + esc(l.note) : ''}</div></div>
         <div class="stepper">
-          <button data-i="${i}" data-d="-1">−</button><span>${l.qty}</span><button data-i="${i}" data-d="1">+</button>
+          <button type="button" data-i="${i}" data-d="-1" aria-label="ลดจำนวน">−</button><span>${l.qty}</span><button type="button" data-i="${i}" data-d="1" aria-label="เพิ่มจำนวน">+</button>
         </div>
         <div class="line-price">${baht(l.unit_price * l.qty)}</div>
       </div>`).join('')
-    : '<p class="muted center">ยังไม่มีรายการ</p>';
+    : '<p class="muted center" style="margin:24px 0">ยังไม่มีรายการ เลือกเมนูได้เลย</p>';
   el.onclick = e => {
     const b = e.target.closest('button[data-i]');
     if (b) cart.change(+b.dataset.i, +b.dataset.d);
@@ -64,17 +78,35 @@ function renderCartLines(cart, el) {
 }
 
 // ---------- รายการเมนู ----------
-function renderMenuList(menu, el, onPick) {
+// layout: 'list' = แถวละรายการ (มือถือลูกค้า), 'grid' = การ์ด (แท็บเล็ตหน้าร้าน)
+function itemHtml(m, tone, layout) {
+  const hint = (m.options || []).length ? '<span class="tag">เลือกเพิ่มได้</span>' : '';
+  const price = m.available ? baht(m.price) : 'หมดแล้ว';
+  return `<button type="button" class="item ${layout === 'grid' ? 'card' : 'li'} t${tone % 4}" data-id="${m.id}" ${m.available ? '' : 'disabled'}>
+    <div class="thumb">${thumbInner(m)}</div>
+    <div class="info"><div class="item-name">${esc(m.name)}</div><div class="item-price">${price}${m.available ? hint : ''}</div></div>
+    ${layout === 'grid' ? '' : '<span class="add" aria-hidden="true">+</span>'}
+  </button>`;
+}
+
+function renderMenuList(menu, el, onPick, layout = 'list') {
   const cats = [...new Set(menu.map(m => m.category))];
-  el.innerHTML = cats.map(c => `
-    <h2 class="cat">${esc(c)}</h2>
-    <div class="grid">${menu.filter(m => m.category === c).map(m => `
-      <button class="item" data-id="${m.id}" ${m.available ? '' : 'disabled'}>
-        ${m.image_url ? `<img src="${esc(m.image_url)}" alt="" loading="lazy">` : '<div class="noimg">🍜</div>'}
-        <div class="item-name">${esc(m.name)}</div>
-        <div class="item-price">${m.available ? baht(m.price) : 'หมด'}</div>
-      </button>`).join('')}</div>`).join('');
+  const nav = cats.length > 1
+    ? `<nav class="catnav">${cats.map((c, i) => `<button type="button" class="catchip${i === 0 ? ' on' : ''}" data-cat="${i}">${catIcon(c)} ${esc(c)}</button>`).join('')}</nav>`
+    : '';
+  const sections = cats.map((c, i) => `
+    <section class="catsec" data-sec="${i}">
+      <h2 class="cat">${esc(c)}</h2>
+      <div class="${layout === 'grid' ? 'grid' : 'rows'}">${menu.filter(m => m.category === c).map(m => itemHtml(m, i, layout)).join('')}</div>
+    </section>`).join('');
+  el.innerHTML = nav + sections;
   el.onclick = e => {
+    const chip = e.target.closest('.catchip');
+    if (chip) {
+      el.querySelectorAll('.catchip').forEach(c => c.classList.toggle('on', c === chip));
+      el.querySelector(`[data-sec="${chip.dataset.cat}"]`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     const b = e.target.closest('.item');
     if (!b || b.disabled) return;
     onPick(menu.find(m => m.id == b.dataset.id));
@@ -90,7 +122,10 @@ function openItemDialog(item, onAdd) {
   dlg.className = 'sheet';
   dlg.innerHTML = `
     <div class="sheet-body">
-      <h3>${esc(item.name)} <span class="muted">${baht(base)}</span></h3>
+      <div class="sheet-head">
+        <div class="thumb">${thumbInner(item)}</div>
+        <div class="info"><h3>${esc(item.name)}</h3><div class="item-price">${baht(base)}</div></div>
+      </div>
       ${groups.map((g, gi) => `
         <fieldset><legend>${esc(g.name)}${g.required ? ' <b class="req">*</b>' : ''}</legend>
           ${g.choices.map((c, ci) => `
@@ -98,9 +133,9 @@ function openItemDialog(item, onAdd) {
               <span>${esc(c.name)}${Number(c.price) ? ' +' + c.price : ''}</span></label>`).join('')}
         </fieldset>`).join('')}
       <input class="note" placeholder="หมายเหตุ เช่น ไม่ใส่ผัก" maxlength="200">
-      <div class="qty-row"><button type="button" data-d="-1">−</button><b class="q">1</b><button type="button" data-d="1">+</button></div>
+      <div class="qty-row"><button type="button" data-d="-1" aria-label="ลดจำนวน">−</button><b class="q">1</b><button type="button" data-d="1" aria-label="เพิ่มจำนวน">+</button></div>
       <p class="err" hidden></p>
-      <div class="row">
+      <div class="row sheet-foot">
         <button type="button" class="btn ghost" data-close>ยกเลิก</button>
         <button type="button" class="btn grow" data-ok>เพิ่มลงตะกร้า <span class="t"></span></button>
       </div>
@@ -120,6 +155,7 @@ function openItemDialog(item, onAdd) {
   };
   dlg.addEventListener('change', update);
   dlg.addEventListener('click', e => {
+    if (e.target === dlg) { dlg.close(); return; }
     const d = e.target.closest('[data-d]');
     if (d) { qty = Math.max(1, Math.min(50, qty + +d.dataset.d)); update(); return; }
     if (e.target.closest('[data-close]')) { dlg.close(); return; }

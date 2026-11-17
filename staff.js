@@ -24,7 +24,7 @@ function beep() {
 }
 
 // ---------- ล็อกอิน ----------
-$('#loginView').onsubmit = async e => {
+$('#loginForm').onsubmit = async e => {
   e.preventDefault();
   const { error } = await sb.auth.signInWithPassword({ email: $('#email').value, password: $('#password').value });
   const err = $('#loginErr');
@@ -77,18 +77,18 @@ async function refresh() {
   known = pendingIds; firstLoad = false;
 }
 
-function minsAgo(ts) {
-  const m = Math.max(0, Math.round((Date.now() - new Date(ts)) / 60000));
-  return m < 1 ? 'เมื่อสักครู่' : m + ' นาทีที่แล้ว';
-}
-
 function card(o) {
-  const where = o.order_type === 'takeaway' ? '🛍️ กลับบ้าน' : '🪑 ' + esc(o.tables?.name || '');
+  const mins = Math.max(0, Math.round((Date.now() - new Date(o.created_at)) / 60000));
+  const late = mins >= 10 && o.status !== 'ready';
+  const ago = mins < 1 ? 'เมื่อสักครู่' : mins + ' นาทีที่แล้ว';
+  const takeaway = o.order_type === 'takeaway';
+  const where = takeaway ? '🛍️ กลับบ้าน' : esc(o.tables?.name || '');
   const items = [...o.order_items].sort((a, b) => a.id - b.id).map(i => `
     <li><b>${i.qty}×</b> ${esc(i.name)}
       <div class="muted">${esc(optionsText(i.options))}${i.note ? ' · ' + esc(i.note) : ''}</div></li>`).join('');
   const total = o.order_items.reduce((s, i) => s + i.unit_price * i.qty, 0);
-  const doneLabel = o.order_type === 'takeaway' ? 'ลูกค้ารับแล้ว' : 'เสิร์ฟแล้ว';
+  const qtyAll = o.order_items.reduce((s, i) => s + i.qty, 0);
+  const doneLabel = takeaway ? 'ลูกค้ารับแล้ว' : 'เสิร์ฟแล้ว';
   const acts = {
     pending: `<button class="btn danger" data-act="cancel" data-id="${o.id}">ปฏิเสธ</button>
               <button class="btn ok" data-act="cooking" data-id="${o.id}">ยืนยัน</button>`,
@@ -96,17 +96,21 @@ function card(o) {
     ready: `<button class="btn ok" data-act="served" data-id="${o.id}">${doneLabel}</button>`
   }[o.status];
   return `<div class="ocard ${o.status}">
-    <div class="top"><span class="qn">#${o.queue_no}</span><b class="grow">${where}</b><span class="muted">${minsAgo(o.created_at)}</span></div>
+    <div class="o-head">
+      <span class="qn">${o.queue_no}</span>
+      <div class="grow"><span class="where">${where}</span>
+        <span class="muted"><span class="ago${late ? ' late' : ''}">${ago}</span> · ${o.source === 'customer' ? 'สั่งผ่าน QR' : 'พนักงานคีย์'}</span></div>
+    </div>
     <ul>${items}</ul>
     ${o.note ? `<div class="muted">📝 ${esc(o.note)}</div>` : ''}
-    <div class="row" style="margin:8px 0 10px"><span class="muted grow">${o.source === 'customer' ? 'สั่งผ่าน QR' : 'พนักงานคีย์'}</span><b>${baht(total)}</b></div>
+    <div class="o-foot"><span class="muted">${qtyAll} รายการ</span><b>${baht(total)}</b></div>
     <div class="acts">${acts}</div></div>`;
 }
 
 function renderBoard(orders) {
   for (const s of ACTIVE) {
     const list = orders.filter(o => o.status === s);
-    $('#col-' + s).innerHTML = list.map(card).join('') || '<p class="muted center">—</p>';
+    $('#col-' + s).innerHTML = list.map(card).join('') || '<p class="empty">ไม่มีออเดอร์</p>';
     $('#c-' + s).textContent = list.length;
   }
 }
@@ -138,7 +142,7 @@ $('#newBtn').onclick = () => {
   newType = 'dine_in'; newTable = null; staffCart.clear();
   document.querySelectorAll('#typeSeg button').forEach(b => b.classList.toggle('on', b.dataset.type === 'dine_in'));
   renderTableSeg();
-  renderMenuList(menu, $('#staffMenu'), item => openItemDialog(item, line => staffCart.add(line)));
+  renderMenuList(menu, $('#staffMenu'), item => openItemDialog(item, line => staffCart.add(line)), 'grid');
   $('#staffNote').value = ''; $('#staffErr').hidden = true;
   $('#newView').hidden = false;
 };
@@ -161,7 +165,7 @@ $('#staffSubmit').onclick = async () => {
   const err = $('#staffErr');
   if (submitting) return;
   if (!staffCart.count) { err.hidden = false; err.textContent = 'ยังไม่ได้เลือกเมนู'; return; }
-  if (newType === 'dine_in' && !newTable) { err.hidden = false; err.textContent = 'กรุณาเลือกโต๊ะ'; return; }
+  if (newType === 'dine_in' && !newTable) { err.hidden = false; err.textContent = 'เลือกโต๊ะก่อนส่ง'; return; }
   submitting = true; err.hidden = true;
   const { data, error } = await sb.rpc('create_order', {
     p_table_id: newType === 'dine_in' ? newTable : null, p_type: newType, p_source: 'staff',

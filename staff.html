@@ -3,36 +3,44 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>หน้าร้าน - คิวออเดอร์</title>
+  <meta name="theme-color" content="#261A14">
+  <title>หน้าร้าน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <!-- เข้าสู่ระบบ -->
-  <form id="loginView" class="login">
-    <h2 style="margin:0">เข้าสู่ระบบหน้าร้าน</h2>
-    <input class="input" id="email" type="email" placeholder="อีเมล" autocomplete="username" required>
-    <input class="input" id="password" type="password" placeholder="รหัสผ่าน" autocomplete="current-password" required>
-    <p class="err" id="loginErr" hidden></p>
-    <button class="btn big">เข้าสู่ระบบ</button>
-  </form>
+  <div id="loginView" class="login-wrap">
+    <form id="loginForm" class="login">
+      <span class="logo" data-bowl></span>
+      <h2>เข้าสู่ระบบหน้าร้าน</h2>
+      <input class="input" id="email" type="email" placeholder="อีเมล" autocomplete="username" required>
+      <input class="input" id="password" type="password" placeholder="รหัสผ่าน" autocomplete="current-password" required>
+      <p class="err" id="loginErr" hidden></p>
+      <button class="btn big">เข้าสู่ระบบ</button>
+    </form>
+  </div>
 
   <!-- บอร์ดคิว -->
   <div id="appView" hidden>
-    <div class="hdr">
-      <h1 id="shop">หน้าร้าน</h1>
-      <button class="btn" id="newBtn" style="background:#fff;color:var(--brand)">+ รับออเดอร์</button>
+    <header class="hdr">
+      <span class="logo" data-bowl></span>
+      <div class="grow"><h1 id="shop">หน้าร้าน</h1><span class="live">รับออเดอร์สด</span></div>
+      <button class="btn solid" id="newBtn">+ รับออเดอร์</button>
       <button class="btn" id="logout">ออก</button>
-    </div>
+    </header>
     <div class="board">
-      <div class="col"><h2>รอยืนยัน <span class="count" id="c-pending">0</span></h2><div id="col-pending"></div></div>
-      <div class="col"><h2>กำลังทำ <span class="count" id="c-cooking">0</span></h2><div id="col-cooking"></div></div>
-      <div class="col"><h2>พร้อมเสิร์ฟ / รับของ <span class="count" id="c-ready">0</span></h2><div id="col-ready"></div></div>
+      <section class="col pending"><h2>รอยืนยัน <span class="count" id="c-pending">0</span></h2><div id="col-pending"></div></section>
+      <section class="col cooking"><h2>กำลังทำ <span class="count" id="c-cooking">0</span></h2><div id="col-cooking"></div></section>
+      <section class="col ready"><h2>พร้อมเสิร์ฟ / รับของ <span class="count" id="c-ready">0</span></h2><div id="col-ready"></div></section>
     </div>
   </div>
 
-  <!-- หน้าจอรับออเดอร์โดยพนักงาน (นั่งในร้าน / กลับบ้าน) -->
+  <!-- รับออเดอร์โดยพนักงาน (นั่งในร้าน / กลับบ้าน) -->
   <div id="newView" class="overlay" hidden>
-    <div class="hdr"><h1>รับออเดอร์ใหม่</h1><button class="btn" id="newClose">ปิด</button></div>
+    <header class="hdr"><h1 class="grow">รับออเดอร์ใหม่</h1><button class="btn" id="newClose">ปิด</button></header>
     <div class="split">
       <div class="left" id="staffMenu"></div>
       <div class="right">
@@ -43,7 +51,7 @@
         <div class="seg" id="tableSeg"></div>
         <div id="staffLines"></div>
         <input class="note" id="staffNote" placeholder="หมายเหตุ (ถ้ามี)" maxlength="300">
-        <div class="row"><b class="grow">รวม</b><b id="staffSum">฿0</b></div>
+        <div class="sum-row"><b class="grow">รวม</b><b id="staffSum">฿0</b></div>
         <p class="err" id="staffErr" hidden></p>
         <button class="btn big ok" id="staffSubmit">ส่งเข้าครัว</button>
       </div>
@@ -52,6 +60,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
+  <script src="bowl.js"></script>
   <script src="common.js"></script>
   <script src="staff.js"></script>
 </body>

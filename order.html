@@ -3,19 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#261A14">
   <title>สั่งอาหาร</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="hdr"><h1 id="shop">สั่งอาหาร</h1><span id="tableName"></span></div>
+  <header class="hdr">
+    <span class="logo" data-bowl></span>
+    <div class="grow"><h1 id="shop">สั่งอาหาร</h1><div class="sub">สั่งจากโต๊ะของคุณ</div></div>
+    <span class="pill" id="tableName"></span>
+  </header>
+
   <div class="wrap">
-    <div id="statusCard" class="status-card" hidden></div>
-    <p id="fatal" class="err center" hidden></p>
+    <div id="statusCard" class="ticket-wrap" hidden></div>
+    <p id="fatal" class="err center" style="margin-top:40px" hidden></p>
     <div id="menu"></div>
   </div>
 
   <div class="cartbar" id="cartbar" hidden>
-    <button class="btn big" id="openCart"><span>🛒 ตะกร้า (<span id="cnt">0</span>)</span><span id="tot"></span></button>
+    <button class="btn" id="openCart"><span><span class="badge" id="cnt">0</span>ดูตะกร้า</span><span id="tot"></span></button>
   </div>
 
   <dialog class="sheet" id="cartDlg">
@@ -23,11 +32,11 @@
       <h3>รายการที่สั่ง</h3>
       <div id="lines"></div>
       <input class="note" id="orderNote" placeholder="หมายเหตุถึงร้าน (ถ้ามี)" maxlength="300">
-      <div class="row"><b class="grow">รวม</b><b id="sum"></b></div>
-      <p class="muted center">ชำระเงินตอนเรียกเก็บเงินที่โต๊ะ</p>
+      <div class="sum-row"><b class="grow">รวม</b><b id="sum"></b></div>
+      <p class="muted center" style="margin:0">จ่ายเงินตอนเรียกเก็บที่โต๊ะ</p>
       <p class="err" id="submitErr" hidden></p>
-      <div class="row">
-        <button class="btn ghost" id="closeCart">กลับไปเลือกเมนู</button>
+      <div class="row sheet-foot">
+        <button class="btn ghost" id="closeCart">เลือกเมนูต่อ</button>
         <button class="btn grow" id="submit">ยืนยันสั่งอาหาร</button>
       </div>
     </div>
@@ -35,6 +44,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
+  <script src="bowl.js"></script>
   <script src="common.js"></script>
   <script src="order.js"></script>
 </body>
