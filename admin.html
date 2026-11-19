@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#261A14">
+  <title>หลังบ้าน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- เข้าสู่ระบบ -->
+  <div id="loginView" class="login-wrap">
+    <form id="loginForm" class="login">
+      <span class="logo" data-bowl></span>
+      <h2>เข้าสู่ระบบหลังบ้าน</h2>
+      <input class="input" id="email" type="email" placeholder="อีเมล" autocomplete="username" required>
+      <input class="input" id="password" type="password" placeholder="รหัสผ่าน" autocomplete="current-password" required>
+      <p class="err" id="loginErr" hidden></p>
+      <button class="btn big">เข้าสู่ระบบ</button>
+    </form>
+  </div>
+
+  <div id="appView" hidden>
+    <header class="hdr">
+      <span class="logo" data-bowl></span>
+      <div class="grow"><h1 id="shop">หลังบ้าน</h1><span class="live" id="roleLabel"></span></div>
+      <a class="btn" href="staff.html">หน้าร้าน</a>
+      <button class="btn" id="logout">ออก</button>
+    </header>
+
+    <div class="admin-wrap">
+      <nav class="tabs" id="tabs">
+        <button class="tab on" data-tab="menu">เมนู</button>
+        <button class="tab admin-only" data-tab="tables">โต๊ะและ QR</button>
+        <button class="tab admin-only" data-tab="members">สมาชิก</button>
+        <button class="tab admin-only" data-tab="settings">ตั้งค่าร้าน</button>
+      </nav>
+
+      <!-- เมนู -->
+      <section class="panel" id="panel-menu">
+        <div class="bar">
+          <div class="grow muted" id="menuHint"></div>
+          <button class="btn admin-only" id="addMenu">+ เพิ่มเมนู</button>
+        </div>
+        <div id="menuList"></div>
+      </section>
+
+      <!-- โต๊ะ -->
+      <section class="panel" id="panel-tables" hidden>
+        <div class="bar">
+          <div class="grow muted">ชื่อโต๊ะแก้ได้ทันที โต๊ะที่ปิดใช้งานจะสั่งไม่ได้ (ลบโต๊ะไม่ได้ เพราะมีประวัติออเดอร์)</div>
+          <a class="btn ghost" href="qr.html" target="_blank" rel="noopener">พิมพ์ QR ทุกโต๊ะ</a>
+          <button class="btn" id="addTable">+ เพิ่มโต๊ะ</button>
+        </div>
+        <div id="tableList"></div>
+      </section>
+
+      <!-- สมาชิก -->
+      <section class="panel" id="panel-members" hidden>
+        <div class="help">
+          <b>เพิ่มคนใหม่:</b> เข้า Supabase → Authentication → Users → Add user → ใส่อีเมลกับรหัสผ่าน และติ๊ก Auto Confirm User
+          แล้วกลับมากด "โหลดใหม่" ที่นี่ ชื่อจะโผล่ในรายการ จากนั้นเลือกบทบาทและกดบันทึก
+          <br><b>พนักงาน</b> รับออเดอร์ จัดการคิว และปิด/เปิดเมนูหมดได้ · <b>แอดมิน</b> ทำได้ทุกอย่างรวมถึงแก้เมนูและจัดการสมาชิก
+        </div>
+        <div class="bar" style="margin-top:12px"><div class="grow"></div><button class="btn ghost" id="reloadMembers">โหลดใหม่</button></div>
+        <div id="memberList"></div>
+      </section>
+
+      <!-- ตั้งค่าร้าน -->
+      <section class="panel" id="panel-settings" hidden>
+        <div class="settings-card">
+          <div class="field"><label for="sShop">ชื่อร้าน</label>
+            <input class="input" id="sShop" maxlength="60" placeholder="แสดงในหน้าลูกค้าและใบเสร็จ"></div>
+          <div class="field"><label for="sPP">เลข PromptPay สำหรับรับเงิน</label>
+            <input class="input" id="sPP" inputmode="numeric" maxlength="20" placeholder="เบอร์มือถือ 10 หลัก หรือเลขบัตรประชาชน/ภาษี 13 หลัก">
+            <div class="muted" id="sPPHint"></div></div>
+          <div class="field"><label for="sPPName">ชื่อบัญชีที่แสดงตอนเก็บเงิน</label>
+            <input class="input" id="sPPName" maxlength="60" placeholder="ไม่บังคับ ช่วยให้ลูกค้าตรวจชื่อก่อนโอน"></div>
+          <div class="field"><label for="sNote">ข้อความท้ายใบเสร็จ</label>
+            <input class="input" id="sNote" maxlength="120" placeholder="ขอบคุณที่ใช้บริการ"></div>
+          <label class="switch"><input type="checkbox" id="sAccept"><span></span><em>เปิดรับออเดอร์ผ่าน QR (ปิดชั่วคราวได้ พนักงานยังคีย์เองได้)</em></label>
+          <p class="err" id="sErr" hidden></p>
+          <div class="row"><button class="btn" id="sSave">บันทึก</button><button class="btn ghost" id="sPreview" type="button">ดู QR ตัวอย่าง</button></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="bowl.js"></script>
+  <script src="common.js"></script>
+  <script src="qrcode.js"></script>
+  <script src="promptpay.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

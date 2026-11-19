@@ -33,10 +33,26 @@ $('#loginForm').onsubmit = async e => {
 };
 $('#logout').onclick = () => sb.auth.signOut();
 
-function showSession(session) {
-  $('#loginView').hidden = !!session;
-  $('#appView').hidden = !session;
-  if (session) start(); else stop();
+let started = false;
+async function showSession(session) {
+  if (!session) {
+    stop(); started = false;
+    $('#loginView').hidden = false; $('#appView').hidden = true;
+    return;
+  }
+  if (started) return;
+  // ล็อกอินได้ไม่ได้แปลว่าเป็นพนักงาน ต้องมีบทบาทที่แอดมินกำหนดให้
+  const { data, error } = await sb.rpc('my_role');
+  const legacy = error && error.code === 'PGRST202'; // ยังไม่ได้รัน admin.sql ใช้ระบบเดิมไปก่อน
+  if (!legacy && (error || !data)) {
+    const err = $('#loginErr'); err.hidden = false;
+    err.textContent = error ? 'ตรวจสอบสิทธิ์ไม่สำเร็จ ลองใหม่อีกครั้ง' : 'บัญชีนี้ยังไม่ได้รับสิทธิ์ ให้แอดมินกำหนดสิทธิ์ก่อน';
+    await sb.auth.signOut();
+    return;
+  }
+  started = true; MY_ROLE = data || null;
+  $('#loginView').hidden = true; $('#appView').hidden = false;
+  start();
 }
 sb.auth.getSession().then(({ data }) => showSession(data.session));
 sb.auth.onAuthStateChange((evt, session) => {
@@ -45,19 +61,21 @@ sb.auth.onAuthStateChange((evt, session) => {
 
 // ---------- บอร์ดคิว ----------
 async function start() {
+  await loadPublicSettings();
   $('#shop').textContent = CONFIG.SHOP_NAME;
-  firstLoad = true; known = new Set();
+  firstLoad = true; known = new Set(); knownReq = null;
   try {
     [menu, tables] = await Promise.all([
       loadMenu(),
       sb.from('tables').select('*').eq('active', true).order('id').then(r => r.data || [])
     ]);
   } catch (e) { console.error(e); }
-  await refresh();
+  await Promise.all([loadShopSettings().catch(() => {}), refresh()]);
   channel = sb.channel('board')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, scheduleRefresh)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, scheduleRefresh)
-    .subscribe();
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, scheduleRefresh);
+  if (billsReady) channel.on('postgres_changes', { event: '*', schema: 'public', table: 'bills' }, scheduleRefresh);
+  channel.subscribe();
   poller = setInterval(refresh, 15000); // สำรองเผื่อ realtime หลุด
 }
 function stop() {
@@ -75,6 +93,7 @@ async function refresh() {
   const pendingIds = new Set(data.filter(o => o.status === 'pending').map(o => o.id));
   if (!firstLoad && [...pendingIds].some(id => !known.has(id))) beep();
   known = pendingIds; firstLoad = false;
+  refreshBills();
 }
 
 function card(o) {

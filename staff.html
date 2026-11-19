@@ -28,6 +28,8 @@
     <header class="hdr">
       <span class="logo" data-bowl></span>
       <div class="grow"><h1 id="shop">หน้าร้าน</h1><span class="live">รับออเดอร์สด</span></div>
+      <a class="btn" href="admin.html">หลังบ้าน</a>
+      <button class="btn billbtn" id="billBtn">บิล / เก็บเงิน<span class="count" id="billCount" hidden>0</span></button>
       <button class="btn solid" id="newBtn">+ รับออเดอร์</button>
       <button class="btn" id="logout">ออก</button>
     </header>
@@ -58,10 +60,28 @@
     </div>
   </div>
 
+  <!-- เก็บเงิน: บิลค้างชำระ / ชำระแล้ววันนี้ -->
+  <div id="billView" class="overlay" hidden>
+    <header class="hdr"><h1 class="grow">เก็บเงิน</h1><button class="btn" id="billClose">ปิด</button></header>
+    <div class="split">
+      <div class="left">
+        <div class="seg" id="billTabs" style="margin:12px 0">
+          <button data-tab="open" class="on">ค้างชำระ</button>
+          <button data-tab="paid">ชำระแล้ววันนี้</button>
+        </div>
+        <div id="billList"></div>
+      </div>
+      <div class="right" id="billDetail"></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="bowl.js"></script>
   <script src="common.js"></script>
+  <script src="qrcode.js"></script>
+  <script src="promptpay.js"></script>
+  <script src="bills.js"></script>
   <script src="staff.js"></script>
 </body>
 </html>

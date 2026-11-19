@@ -25,6 +25,33 @@ async function loadMenu() {
   return data;
 }
 
+// ---------- ตั้งค่าร้านที่ลูกค้าเห็นได้ (ชื่อร้าน / สถานะเปิดรับออเดอร์) ----------
+// ถ้ายังไม่ได้รัน billing.sql หรืออ่านไม่ได้ จะใช้ชื่อร้านจาก config.js แทน
+async function loadPublicSettings() {
+  try {
+    const { data, error } = await sb.rpc('get_public_settings');
+    if (!error && data) {
+      if (data.shop_name) CONFIG.SHOP_NAME = data.shop_name;
+      return { accepting_orders: data.accepting_orders !== false };
+    }
+  } catch (e) { console.error(e); }
+  return { accepting_orders: true };
+}
+
+// ---------- พิมพ์เนื้อหาที่กำหนดเอง (ใบเสร็จ ฯลฯ) ----------
+function printHtml(html) {
+  let area = document.getElementById('printArea');
+  if (!area) { area = document.createElement('div'); area.id = 'printArea'; document.body.appendChild(area); }
+  area.innerHTML = html;
+  document.body.classList.add('print-on');
+  const done = () => { document.body.classList.remove('print-on'); area.innerHTML = ''; window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  window.print();
+}
+
+const fmtDateTime = d => new Date(d).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+const fmtTime = d => new Date(d).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
 // ---------- ไอคอนตามหมวด (ใช้เมื่อยังไม่มีรูปอาหาร) ----------
 const CAT_ICON = [
   [/ก๋วยเตี๋ยว|เส้น|บะหมี่|เกาเหลา/, '🍜'],

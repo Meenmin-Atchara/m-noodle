@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>พิมพ์ QR โต๊ะ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="qr-page">
+    <div class="noprint qr-top">
+      <div class="grow">
+        <h1 style="margin:0 0 4px">QR สั่งอาหารประจำโต๊ะ</h1>
+        <p class="muted" style="margin:0">ลองสแกนด้วยมือถือได้เลยบนหน้านี้ แล้วพิมพ์ไปติดโต๊ะเมื่อพอใจ</p>
+      </div>
+      <button class="btn" id="printBtn">พิมพ์</button>
+    </div>
+    <p class="err noprint" id="warn" hidden>หน้านี้เปิดจากเครื่องของคุณเอง QR จะชี้ไปที่เครื่องนี้ มือถือสแกนแล้วเปิดไม่ได้ กรุณาเปิดผ่านเว็บจริง (เช่น https://m-noodle.vercel.app/qr.html)</p>
+    <p class="err" id="fatal" hidden></p>
+    <div class="qrgrid" id="grid"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="bowl.js"></script>
+  <script src="common.js"></script>
+  <script src="qrcode.js"></script>
+  <script src="qr.js"></script>
+</body>
+</html>

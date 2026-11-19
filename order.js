@@ -5,6 +5,7 @@ const LS_KEY = 'lastOrder';
 let pollTimer = null;
 let submitting = false;
 let tableLabel = '';
+let acceptOrders = true, curOrderId = null, pollTick = null;
 
 const cart = new Cart(() => {
   renderCartLines(cart, $('#lines'));
@@ -19,6 +20,9 @@ function fatal(msg) {
 }
 
 async function init() {
+  const ps = await loadPublicSettings();   // ชื่อร้านและสถานะเปิดรับออเดอร์ที่แอดมินตั้งไว้
+  acceptOrders = ps.accepting_orders;
+  $('#closedNote').hidden = acceptOrders;
   $('#shop').textContent = CONFIG.SHOP_NAME;
   document.title = CONFIG.SHOP_NAME + ' · สั่งอาหาร';
   if (!tableId) return fatal('สแกน QR ที่โต๊ะอีกครั้งเพื่อสั่งอาหาร');
@@ -29,7 +33,10 @@ async function init() {
     tableLabel = t.name;
     $('#tableName').textContent = t.name;
     const menu = await loadMenu();
-    renderMenuList(menu, $('#menu'), item => openItemDialog(item, line => { cart.add(line); toast('เพิ่ม ' + item.name + ' แล้ว'); }));
+    renderMenuList(menu, $('#menu'), item => {
+      if (!acceptOrders) return toast('ร้านปิดรับออเดอร์ผ่าน QR ชั่วคราว กรุณาแจ้งพนักงาน', 3500);
+      openItemDialog(item, line => { cart.add(line); toast('เพิ่ม ' + item.name + ' แล้ว'); });
+    });
   } catch (e) {
     console.error(e);
     return fatal('โหลดเมนูไม่สำเร็จ ลองรีเฟรชหน้านี้อีกครั้ง');
@@ -39,7 +46,16 @@ async function init() {
 
 // ---------- ใบคิวและสถานะออเดอร์ ----------
 const STEPS = ['รอร้านยืนยัน', 'กำลังทำ', 'พร้อมเสิร์ฟ'];
-function showStatus(queueNo, status) {
+// ปุ่มเรียกเก็บเงิน / สถานะบิล (bill.status มาจาก billing.sql ถ้ายังไม่ได้รันจะไม่แสดงอะไร)
+function billAction(status, bill) {
+  if (status === 'cancelled') return '';
+  if (bill.bill_status === 'paid') return '<p class="t-req">ชำระเงินแล้ว ขอบคุณที่ใช้บริการครับ</p>';
+  if (bill.bill_status !== 'open') return '';
+  return bill.requested
+    ? '<p class="t-req">แจ้งพนักงานแล้ว กำลังนำบิลมาให้ครับ</p>'
+    : '<button class="btn ghost billreq" id="reqBill">เรียกเก็บเงิน</button>';
+}
+function showStatus(queueNo, status, bill = {}) {
   const c = $('#statusCard'); c.hidden = false;
   const cancelled = status === 'cancelled';
   const idx = { pending: 0, cooking: 1, ready: 2, served: 3 }[status] ?? 0;
@@ -51,6 +67,7 @@ function showStatus(queueNo, status) {
       <div class="perf"></div>
       <ol class="steps">${STEPS.map((s, i) => `<li class="${cancelled ? '' : i < idx ? 'done' : i === idx ? 'on' : ''}"><i></i>${s}</li>`).join('')}</ol>
       <p class="t-msg">${STATUS_TH[status] || ''}</p>
+      ${billAction(status, bill)}
     </div>`;
 }
 
@@ -67,12 +84,25 @@ function poll(last) {
   const tick = async () => {
     const { data } = await sb.rpc('get_order_status', { p_order_id: last.id });
     if (!data) { $('#statusCard').hidden = true; clearInterval(pollTimer); return; }
-    showStatus(data.queue_no, data.status);
-    if (data.status === 'served' || data.status === 'cancelled') clearInterval(pollTimer);
+    showStatus(data.queue_no, data.status, { bill_status: data.bill_status, requested: data.requested });
+    // หยุดถามเมื่อออเดอร์จบแล้ว และบิลไม่ได้เปิดค้างอยู่ (จ่ายแล้ว/ยกเลิก/ไม่มีระบบบิล)
+    const done = data.status === 'served' || data.status === 'cancelled';
+    if (done && data.bill_status !== 'open') clearInterval(pollTimer);
   };
+  curOrderId = last.id; pollTick = tick;
   tick();
   pollTimer = setInterval(tick, 8000);
 }
+
+$('#statusCard').addEventListener('click', async e => {
+  const b = e.target.closest('#reqBill');
+  if (!b || !curOrderId) return;
+  b.disabled = true;
+  const { data, error } = await sb.rpc('request_bill', { p_order_id: curOrderId });
+  if (error || !data || !data.ok) { b.disabled = false; return toast('ส่งคำขอไม่สำเร็จ ลองอีกครั้งหรือเรียกพนักงาน', 3500); }
+  toast('แจ้งพนักงานแล้ว');
+  if (pollTick) pollTick();
+});
 
 // ---------- ตะกร้าและส่งออเดอร์ ----------
 $('#openCart').onclick = () => $('#cartDlg').showModal();
@@ -92,7 +122,8 @@ $('#submit').onclick = async () => {
   if (error) {
     console.error(error);
     const e = $('#submitErr'); e.hidden = false;
-    e.textContent = 'สั่งไม่สำเร็จ อาจมีเมนูที่เพิ่งหมด ลองใหม่อีกครั้งหรือเรียกพนักงาน';
+    // ข้อความภาษาไทยจากฐานข้อมูล (เช่น ร้านปิดรับออเดอร์) แสดงตรงๆ ได้ นอกนั้นใช้ข้อความทั่วไป
+    e.textContent = /[ก-๙]/.test(error.message || '') ? error.message : 'สั่งไม่สำเร็จ อาจมีเมนูที่เพิ่งหมด ลองใหม่อีกครั้งหรือเรียกพนักงาน';
     return;
   }
   const last = { id: data.order_id, queue_no: data.queue_no, status: data.status, table: tableId, at: Date.now() };
